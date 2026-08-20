@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "subbox"
+dynamic = ["version"]
+description = "Turn a proxy subscription into a running local sing-box proxy"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Dmitry", email = "samarindima4@gmail.com" }]
+requires-python = ">=3.11"
+dependencies = []
+keywords = ["sing-box", "proxy", "vless", "hysteria2", "pac", "tui"]
+classifiers = [
+  "Environment :: Console :: Curses",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.11",
+]
+
+[project.scripts]
+subbox = "subbox.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/dYGamma/subbox"
+Issues = "https://github.com/dYGamma/subbox/issues"
+
+[tool.hatch.version]
+path = "src/subbox/__init__.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]

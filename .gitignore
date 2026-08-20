@@ -1,9 +1,15 @@
 # Local runtime state — never commit. The subscription URL is a credential.
-config.toml
+# Anchored to the repo root: a development instance may put these here, but
+# examples/config.toml is a shipped file and must stay tracked.
+/config.toml
+!examples/config.toml
 *.secret
 sing-box.json
 sing-box.json.bak-*
 proxy.pac
+
+# A development instance created inside the checkout
+/subbox-home/
 
 # Python
 __pycache__/
