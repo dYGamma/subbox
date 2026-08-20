@@ -1,0 +1,10 @@
+# The neutral default: assistants that commonly need a different exit.
+domains = [
+  "anthropic.com",
+  "claude.ai",
+  "openai.com",
+  "chatgpt.com",
+  "oaistatic.com",
+  "gemini.google.com",
+  "generativelanguage.googleapis.com",
+]

@@ -1,0 +1,15 @@
+# A broader list, offered by `subbox setup` as an alternative. Copy the
+# entries you want into pac.domains in your config.toml.
+domains = [
+  "anthropic.com", "claude.ai",
+  "openai.com", "chatgpt.com", "oaistatic.com",
+  "gemini.google.com", "generativelanguage.googleapis.com",
+  "instagram.com", "cdninstagram.com", "fbcdn.net",
+  "facebook.com", "fb.com", "fb.me", "fbsbx.com",
+  "meta.com", "meta.ai", "threads.net", "threads.com",
+  "whatsapp.com", "whatsapp.net",
+  "twitter.com", "x.com", "twimg.com", "t.co",
+  "reddit.com", "redd.it", "redditstatic.com", "redditmedia.com",
+  "tiktok.com", "tiktokv.com", "tiktokcdn.com", "byteoversea.com",
+  "bytedance.com", "snssdk.com", "amemv.com", "musical.ly",
+]
