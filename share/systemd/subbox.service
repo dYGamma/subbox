@@ -1,0 +1,16 @@
+[Unit]
+Description=subbox — sing-box client managed by subbox
+Documentation=https://github.com/dYGamma/subbox
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/env mkdir -p %h/.cache/subbox
+ExecStart=/usr/bin/env sing-box run -c %h/.config/subbox/sing-box.json
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=default.target
