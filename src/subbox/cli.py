@@ -15,6 +15,7 @@ from . import (
     probe,
     subscription,
     units,
+    wizard,
 )
 
 OK = 0
@@ -29,6 +30,10 @@ def _require_config(cfg: dict) -> int | None:
         return None
     print("subbox is not configured yet. Run `subbox setup`.", file=sys.stderr)
     return UNCONFIGURED
+
+
+def cmd_setup(cfg: dict, args: argparse.Namespace) -> int:
+    return wizard.run(cfg=cfg)
 
 
 def cmd_sync(cfg: dict, args: argparse.Namespace) -> int:
@@ -118,6 +123,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version",
                         version=f"subbox {__version__}")
     sub = parser.add_subparsers(dest="command")
+
+    p_setup = sub.add_parser("setup", help="interactive first-run configuration")
+    p_setup.set_defaults(func=cmd_setup)
 
     p_sync = sub.add_parser("sync", help="re-fetch the subscription and regenerate")
     p_sync.add_argument("--no-restart", action="store_true",
