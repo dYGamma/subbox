@@ -153,3 +153,35 @@ def test_generated_config_is_accepted_by_sing_box(nodes):
     out = generate.write(doc)
     ok, message = generate.check(out)
     assert ok, message
+
+
+def test_generated_config_is_not_world_readable(nodes):
+    """It holds every node's uuid or password and the Clash API secret."""
+    import stat
+    out = generate.write(generate.build(nodes, config.DEFAULTS))
+    assert oct(stat.S_IMODE(out.stat().st_mode)) == "0o600"
+
+
+def test_backups_of_the_config_are_private_too(nodes):
+    import stat
+    doc = generate.build(nodes, config.DEFAULTS)
+    generate.write(doc)
+    generate.write(doc)
+    backup = next(iter(paths.config_dir().glob("sing-box.json.bak-*")))
+    assert oct(stat.S_IMODE(backup.stat().st_mode)) == "0o600"
+
+
+def test_temp_file_is_never_briefly_world_readable(nodes, monkeypatch):
+    """A write-then-chmod would leave a window; check the mode at check() time."""
+    import stat
+    seen = {}
+
+    real_check = generate.check
+
+    def spy(path):
+        seen["mode"] = oct(stat.S_IMODE(path.stat().st_mode))
+        return real_check(path)
+
+    monkeypatch.setattr(generate, "check", spy)
+    generate.write(generate.build(nodes, config.DEFAULTS))
+    assert seen["mode"] == "0o600"

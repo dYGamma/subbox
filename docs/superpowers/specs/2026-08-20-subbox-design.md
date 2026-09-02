@@ -237,8 +237,8 @@ small amount of code, which keeps the zero-dependency property.
 |---|---|---|
 | User config | `$XDG_CONFIG_HOME/subbox/config.toml` | 0600 |
 | Clash API secret | `$XDG_CONFIG_HOME/subbox/clash.secret` | 0600 |
-| Generated sing-box config | `$XDG_CONFIG_HOME/subbox/sing-box.json` | 0644 |
-| Config backups | `$XDG_CONFIG_HOME/subbox/sing-box.json.bak-<ts>` | 0644 |
+| Generated sing-box config | `$XDG_CONFIG_HOME/subbox/sing-box.json` | 0600 |
+| Config backups | `$XDG_CONFIG_HOME/subbox/sing-box.json.bak-<ts>` | 0600 |
 | Rendered PAC | `$XDG_DATA_HOME/subbox/proxy.pac` | 0644 |
 | sing-box cache db | `$XDG_CACHE_HOME/subbox/cache.db` | dir 0700 |
 | User units (manual install) | `$XDG_CONFIG_HOME/systemd/user/` | 0644 |
@@ -256,6 +256,11 @@ a development instance runs beside a production one.
 - The subscription URL **is** a credential: anyone who reads it can use the
   account. `config.toml` is created `0600` and the wizard refuses to leave it
   more permissive.
+- The **generated `sing-box.json` is equally sensitive** — it carries every
+  node's uuid or password and the Clash API secret — so it and its backups are
+  `0600` as well. It is created through `os.open` with that mode rather than
+  written and then chmod-ed, so there is no window in which it is world
+  readable.
 - `clash.secret` stays in its own `0600` file rather than inside `config.toml`,
   so a user can attach their config to a bug report after removing one line
   instead of two. The Clash API can switch outbounds, so an unauthenticated

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import os
 import shutil
 import subprocess
 import time
@@ -146,12 +147,26 @@ def _prune(path: Path, keep: int) -> None:
         old.unlink()
 
 
+def _write_private(path: Path, text: str) -> None:
+    """Create a file no other user can read, then fill it.
+
+    The generated config carries every node's uuid or password plus the
+    Clash API secret, so it is as sensitive as the subscription URL. Going
+    through os.open means it is never briefly world-readable, which a
+    write-then-chmod would allow.
+    """
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        fh.write(text)
+    path.chmod(0o600)  # O_CREAT mode does not apply to an existing file
+
+
 def write(document: dict, path: Path | None = None, keep: int = 5) -> Path:
     """Validate, then atomically replace, keeping a bounded backup history."""
     path = path or paths.singbox_config()
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     tmp = path.parent / (path.name + ".new")
-    tmp.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n")
+    _write_private(tmp, json.dumps(document, ensure_ascii=False, indent=2) + "\n")
 
     ok, message = check(tmp)
     if not ok:
@@ -159,7 +174,9 @@ def write(document: dict, path: Path | None = None, keep: int = 5) -> Path:
         raise GenerateError(f"sing-box rejected the generated config: {message}")
 
     if path.exists():
-        shutil.copy2(path, path.parent / f"{path.name}.bak-{_stamp()}")
+        backup = path.parent / f"{path.name}.bak-{_stamp()}"
+        shutil.copy2(path, backup)
+        backup.chmod(0o600)  # a backup of a credential file is still one
         _prune(path, keep)
     tmp.replace(path)
     return path
