@@ -156,9 +156,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     cfg = config.load()
     if not getattr(args, "func", None):
-        # The bare `subbox` invocation opens the TUI; wired up in Task 13.
-        parser.print_help()
-        return OK
+        from . import tui  # imported lazily: curses is not needed by any subcommand
+        return tui.run(cfg)
     try:
         return args.func(cfg, args)
     except KeyboardInterrupt:
