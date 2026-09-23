@@ -1,0 +1,37 @@
+# subbox configuration.
+# Written by `subbox setup`; safe to edit by hand.
+
+# Where nodes come from.
+[subscription]
+# Subscription URL from your panel. This is a credential.
+url = ""
+# Skip TLS verification when fetching the subscription. Only for panels
+# on a bare IP with a self-signed certificate. The subscription body is a
+# credential, so an unverified fetch is MITM-able.
+insecure = false
+
+# The local proxy sing-box exposes.
+[proxy]
+listen_addr = "127.0.0.1"
+# Local mixed HTTP+SOCKS5 port that applications point at.
+listen_port = 1080
+# Local Clash API port, used by the TUI to switch nodes.
+clash_port = 9090
+
+# Optional PAC server for per-domain browser routing.
+[pac]
+# Serve a PAC file so a browser can route only these domains.
+enabled = true
+port = 7777
+# Domains sent through the proxy. Subdomains are matched too.
+domains = ["anthropic.com", "claude.ai", "openai.com", "chatgpt.com"]
+
+# How subbox decides whether the tunnel works.
+[probe]
+# Endpoint used to answer 'does traffic actually get out'. Any URL works;
+# what matters is knowing which status means healthy for that endpoint.
+reach_url = "https://www.gstatic.com/generate_204"
+# Statuses from reach_url that mean the exit is healthy.
+reach_ok = [204]
+# Endpoint used for per-node latency measurement.
+latency_url = "https://www.gstatic.com/generate_204"
