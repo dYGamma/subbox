@@ -26,5 +26,8 @@ if [ -z "${SUBBOX_NO_AUTOSTART:-}" ] && command -v systemctl >/dev/null 2>&1; th
     done
 fi
 
+# The backticks below are literal text inside a JSON string, not a command
+# substitution: the port is interpolated by closing and reopening the quote.
+# shellcheck disable=SC2016
 printf '%s\n' '{"systemMessage":"subbox: no proxy on port '"$PORT"'. Requests will use your direct address, which some APIs answer with 403 — that reads as an auth error but is not. Run `subbox doctor`."}'
 exit 0
