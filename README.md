@@ -9,6 +9,8 @@ it as a systemd user service, and gives you a mixed HTTP/SOCKS5 proxy on
 `127.0.0.1:1080`. Optionally it also serves a PAC file, so a browser sends only
 the domains you choose through the proxy and everything else goes direct.
 
+![The subbox dashboard: service state, the node carrying traffic, and a log pane](docs/screenshot.png)
+
 ## What this is not
 
 - **Not a VPN and not a TUN.** `subbox` listens on loopback. It does not
