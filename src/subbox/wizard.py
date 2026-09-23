@@ -4,6 +4,8 @@
 """
 from __future__ import annotations
 
+import getpass
+import sys
 from collections.abc import Callable
 from urllib.parse import urlparse
 
@@ -28,6 +30,27 @@ RU_DOMAINS = DEFAULT_DOMAINS + [
 
 Ask = Callable[[str], str]
 Out = Callable[..., None]
+
+
+def _secret_reader(ask: Ask) -> Ask:
+    """Read a credential without putting it on the screen.
+
+    The subscription URL is an account. Echoing it leaves it in scrollback
+    and in any screenshot. Nothing is lost by hiding it: the very next thing
+    the wizard does is fetch it and print the nodes, which is a better
+    confirmation that the paste worked than seeing the characters.
+
+    Falls back to the plain reader when there is no terminal, so piped input
+    and the tests keep working.
+    """
+    def read(prompt: str) -> str:
+        try:
+            if sys.stdin.isatty():
+                return getpass.getpass(prompt)
+        except (OSError, ValueError):
+            pass
+        return ask(prompt)
+    return read
 
 
 def _safe_url(url: str) -> str:
@@ -73,10 +96,11 @@ def _ask_int(ask: Ask, out: Out, prompt: str, default: int) -> int:
         return candidate
 
 
-def _ask_subscription(ask: Ask, out: Out, cfg: dict) -> list[dict] | None:
+def _ask_subscription(ask: Ask, ask_secret: Ask, out: Out,
+                      cfg: dict) -> list[dict] | None:
     """Returns parsed nodes, or None if the user gave up."""
     while True:
-        url = ask("Subscription URL from your panel: ").strip()
+        url = ask_secret("Subscription URL from your panel: ").strip()
         if not url:
             return None
         if not url.startswith(("http://", "https://")):
@@ -119,10 +143,16 @@ def _ask_subscription(ask: Ask, out: Out, cfg: dict) -> list[dict] | None:
 
 
 def _ask_pac(ask: Ask, out: Out, cfg: dict) -> None:
+    out("")
+    out("A PAC file lets a browser send only the domains you choose through")
+    out("the proxy and everything else direct. Say no if you would rather set")
+    out("proxy environment variables yourself.")
     cfg["pac"]["enabled"] = _yes(
         ask("Serve a PAC file so a browser routes only chosen domains? [Y/n]: "))
     if not cfg["pac"]["enabled"]:
         return
+    out("")
+    out("The browser fetches the PAC file from this port on localhost.")
     cfg["pac"]["port"] = _ask_int(ask, out, "PAC server port",
                                   _free_port_from(cfg["pac"]["port"]))
     out("Which domains should go through the proxy?")
@@ -157,9 +187,10 @@ def _start_services(out: Out, cfg: dict) -> None:
             else f"could not start {unit}: {message.strip()}")
 
 
-def run(ask: Ask = input, out: Out = print, cfg: dict | None = None) -> int:
+def run(ask: Ask = input, out: Out = print, cfg: dict | None = None,
+        ask_secret: Ask | None = None) -> int:
     try:
-        return _run(ask, out, cfg)
+        return _run(ask, ask_secret or _secret_reader(ask), out, cfg)
     except (EOFError, KeyboardInterrupt):
         # Reached by Ctrl-D, Ctrl-C, or a piped stdin that ran out. A
         # traceback here would be the first thing a new user ever saw.
@@ -168,18 +199,25 @@ def run(ask: Ask = input, out: Out = print, cfg: dict | None = None) -> int:
         return 2
 
 
-def _run(ask: Ask, out: Out, cfg: dict | None) -> int:
+def _run(ask: Ask, ask_secret: Ask, out: Out, cfg: dict | None) -> int:
     cfg = cfg if cfg is not None else config.load()
     paths.ensure_dirs()
 
     out("subbox setup")
-    out("Paste the subscription URL your panel gave you. It is a credential, "
-        "so it is stored in a file only you can read.")
-    nodes = _ask_subscription(ask, out, cfg)
+    out("Paste the subscription URL your panel gave you. It is a credential,")
+    out("so it is not shown as you paste it and is stored in a file only you")
+    out("can read. The node list below confirms the paste worked.")
+    nodes = _ask_subscription(ask, ask_secret, out, cfg)
     if nodes is None:
         out("Nothing entered, so nothing was changed.")
         return 2
 
+    out("")
+    out("Press Enter at any question to accept the value in brackets.")
+    out("")
+    out("The local proxy port is the address applications will connect to,")
+    out("as in HTTPS_PROXY=http://127.0.0.1:1080. Change it only if that")
+    out("port is already taken.")
     cfg["proxy"]["listen_port"] = _ask_int(
         ask, out, "Local proxy port", _free_port_from(cfg["proxy"]["listen_port"]))
     _ask_pac(ask, out, cfg)

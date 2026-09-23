@@ -177,3 +177,39 @@ def test_interrupt_ends_the_wizard_cleanly(offline):
     lines = []
     assert wizard.run(ask=ask, out=lines.append) == 2
     assert any("did not finish" in line for line in lines)
+
+
+def test_subscription_is_read_through_the_secret_reader(offline):
+    """It is a credential; echoing it leaves it in scrollback and screenshots."""
+    seen = {"secret": [], "plain": []}
+
+    def ask(prompt):
+        seen["plain"].append(prompt)
+        return ""
+
+    def ask_secret(prompt):
+        seen["secret"].append(prompt)
+        return URL
+
+    lines = []
+    assert wizard.run(ask=ask, out=lines.append, ask_secret=ask_secret) == 0
+    assert any("Subscription URL" in p for p in seen["secret"])
+    assert not any("Subscription URL" in p for p in seen["plain"])
+
+
+def test_every_question_says_what_it_is_for(offline):
+    """A bare 'Local proxy port [1080]:' does not tell anyone what to type."""
+    script = Script([URL, "", "", "", "1"])
+    wizard.run(ask=script.ask, out=script.out)
+    text = script.text
+    assert "Press Enter at any question to accept the value in brackets" in text
+    assert "applications will connect to" in text
+    assert "only the domains you choose" in text
+    assert "browser fetches the PAC file" in text
+
+
+def test_the_secret_reader_falls_back_when_there_is_no_terminal(monkeypatch):
+    """Piped input must still work; getpass would fail on a closed stdin."""
+    monkeypatch.setattr(wizard.sys.stdin, "isatty", lambda: False)
+    read = wizard._secret_reader(lambda prompt: "typed")
+    assert read("Subscription URL: ") == "typed"

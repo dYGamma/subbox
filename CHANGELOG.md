@@ -5,6 +5,24 @@ versioning is [semantic](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-23
+
+Wizard usability and credential handling, from watching a first real run.
+
+### Fixed
+
+- Every question now says what it is for. `Local proxy port [1080]:` on its
+  own does not tell anyone what to type, or that Enter accepts the value in
+  brackets; both are now stated.
+
+### Security
+
+- The subscription URL is no longer echoed while it is pasted. It is an
+  account, and echoing left it in terminal scrollback and in any screenshot.
+  Nothing is lost: the wizard fetches it immediately and prints the node list,
+  which confirms the paste better than seeing the characters. Piped input and
+  terminals that cannot hide echo fall back to a plain read.
+
 ## [0.1.1] - 2026-09-23
 
 Installation fixes, all found by a first install on Debian.

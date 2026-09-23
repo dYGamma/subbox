@@ -1,6 +1,6 @@
 # Maintainer: Dmitry <samarindima4@gmail.com>
 pkgname=subbox
-pkgver=0.1.1
+pkgver=0.1.2
 pkgrel=1
 pkgdesc="Turn a proxy subscription into a running local sing-box proxy, with a TUI"
 arch=('any')
@@ -10,7 +10,7 @@ depends=('python' 'sing-box' 'systemd')
 makedepends=('python-build' 'python-installer' 'python-wheel' 'python-hatchling')
 checkdepends=('python-pytest')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('e0d6cee91696c0f95d70ec98410afaa0dc45f658f903677249e4ee34141be449')
+sha256sums=('SKIP')
 
 build() {
   cd "$pkgname-$pkgver"
