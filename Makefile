@@ -1,6 +1,7 @@
 PREFIX  ?= $(HOME)/.local
 DESTDIR ?=
 PYTHON  ?= python3
+SHELLCHECK ?= shellcheck
 
 # A packaged install owns /usr/lib/systemd/user; a home install must use the
 # only per-user directory systemd actually reads.
@@ -17,7 +18,7 @@ SHAREDIR   ?= $(PREFIX)/share/subbox
 CLAUDE_BIN ?= $(HOME)/.local/share/subbox-claude/bin
 HOOK_DIR   ?= $(HOME)/.claude/hooks
 
-.PHONY: all install install-python install-data install-claude uninstall uninstall-claude check lint dev smoke
+.PHONY: all install install-python install-data install-claude uninstall uninstall-claude check lint dev smoke hooks
 
 all:
 	@echo "targets: install install-claude uninstall check lint dev"
@@ -106,16 +107,24 @@ uninstall-claude:
 	@echo "Remove the PATH line for $(CLAUDE_BIN) from your shell profile,"
 	@echo "and the hook entry from ~/.claude/settings.json."
 
+# Gate pushes on the suite. Worth having even once CI works: a failure here
+# costs seconds instead of a round trip through a runner.
+hooks:
+	git config core.hooksPath .githooks
+	@echo "pre-push hook active; disable with: git config --unset core.hooksPath"
+
 check:
 	$(PYTHON) -m pytest
 
 lint:
 	$(PYTHON) -m ruff check src tests
-	@if command -v shellcheck >/dev/null 2>&1; then \
-		shellcheck install.sh integrations/claude-code/subbox-proxy-ensure.sh && \
-		shellcheck -s bash integrations/claude-code/claude; \
+	@if command -v $(SHELLCHECK) >/dev/null 2>&1; then \
+		$(SHELLCHECK) install.sh integrations/claude-code/subbox-proxy-ensure.sh && \
+		$(SHELLCHECK) -s bash integrations/claude-code/claude; \
 	else \
-		echo "shellcheck is not installed; shell linting skipped here. CI runs it."; \
+		echo "shellcheck not found, so shell linting was skipped."; \
+		echo "Point at a binary with: make lint SHELLCHECK=/path/to/shellcheck"; \
+		echo "Static builds: https://github.com/koalaman/shellcheck/releases"; \
 	fi
 
 dev:

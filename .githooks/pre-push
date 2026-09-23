@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Runs the suite before anything reaches the remote.
+#
+# Installed by `make hooks`. This is what actually gates pushes while CI is
+# unavailable, and it stays useful afterwards: a failure here costs seconds
+# instead of a round trip through a runner.
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+PY=python3
+[ -x .venv/bin/python ] && PY=.venv/bin/python
+
+printf 'pre-push: running the suite with %s\n' "$PY"
+make check PYTHON="$PY"
+make lint  PYTHON="$PY"
+printf 'pre-push: green\n'

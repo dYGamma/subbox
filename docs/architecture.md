@@ -99,6 +99,17 @@ real host. `tests/test_generate.py` additionally runs `sing-box check` on the
 generated configuration when the binary is present, and skips that one
 assertion when it is not.
 
+To gate your own pushes on the suite:
+
+```bash
+make hooks
+```
+
+That points `core.hooksPath` at `.githooks/`, whose `pre-push` runs `make
+check` and `make lint`. Undo with `git config --unset core.hooksPath`.
+`make lint` needs `shellcheck`; if your distribution does not package it, point
+at a static build with `make lint SHELLCHECK=/path/to/shellcheck`.
+
 ## Files this creates on a user's machine
 
 | Path | Mode |
