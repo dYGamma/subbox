@@ -1,0 +1,92 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --upgrade pip pytest ruff
+      - run: python -m pip install -e .
+      - run: python -m pytest -q
+      - run: python -m ruff check src tests
+
+  test-with-singbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install sing-box
+        run: |
+          set -euo pipefail
+          version=1.13.12
+          url="https://github.com/SagerNet/sing-box/releases/download/v${version}/sing-box-${version}-linux-amd64.tar.gz"
+          curl -fsSL "$url" | sudo tar -xz --strip-components=1 -C /usr/local/bin \
+            "sing-box-${version}-linux-amd64/sing-box"
+          sing-box version
+      - run: python -m pip install --upgrade pip pytest
+      - run: python -m pip install -e .
+      # With the binary present, the config validation test stops skipping.
+      # A skipped test proves nothing, so this job exists to make it run.
+      - run: python -m pytest -q
+
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - run: shellcheck install.sh integrations/claude-code/subbox-proxy-ensure.sh
+      - run: shellcheck -s bash integrations/claude-code/claude
+
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install to the default prefix and run it
+        run: |
+          set -euo pipefail
+          make install
+          export PATH="$HOME/.local/bin:$PATH"
+          subbox --version
+          subbox status --quiet || test $? -eq 2   # 2 = not configured yet
+      - name: Uninstall and check nothing is left behind
+        run: |
+          set -euo pipefail
+          make uninstall
+          test ! -e "$HOME/.local/bin/subbox"
+          test ! -e "$HOME/.config/systemd/user/subbox.service"
+
+  readme-drift:
+    runs-on: ubuntu-latest
+    continue-on-error: true   # a warning, never a block on an urgent fix
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Warn when only one README changed
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          [ -n "$base" ] || exit 0
+          changed=$(git diff --name-only "$base" HEAD)
+          en=$(grep -cx 'README.md' <<<"$changed" || true)
+          ru=$(grep -cx 'README.ru.md' <<<"$changed" || true)
+          if [ "$en" != "$ru" ]; then
+            echo "::warning::README.md and README.ru.md are drifting apart"
+          fi
