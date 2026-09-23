@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Routes the real claude binary through a local proxy.
+#
+# Shadows the real binary on PATH and execs it, so the CLI's own updates
+# keep working. Nothing here is hardcoded to a particular home directory:
+# the real binary is the next `claude` on PATH that is not this file.
+#
+# Overrides: SUBBOX_PROXY_PORT, CLAUDE_REAL_BIN, SUBBOX_NO_AUTOSTART.
+set -u
+
+PORT="${SUBBOX_PROXY_PORT:-1080}"
+
+listening() {
+    (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && exec 3>&- && return 0
+    return 1
+}
+
+resolve_real() {
+    local self candidate dir
+    local -a dirs
+    self="$(readlink -f "${BASH_SOURCE[0]}")"
+    IFS=: read -ra dirs <<< "$PATH"
+    for dir in "${dirs[@]}"; do
+        candidate="$dir/claude"
+        [ -x "$candidate" ] || continue
+        [ "$(readlink -f "$candidate")" = "$self" ] && continue
+        printf '%s\n' "$candidate"
+        return 0
+    done
+    return 1
+}
+
+ensure_proxy() {
+    listening "$PORT" && return 0
+    [ -n "${SUBBOX_NO_AUTOSTART:-}" ] && return 1
+    command -v systemctl >/dev/null 2>&1 || return 1
+    systemctl --user start subbox.service >/dev/null 2>&1 || return 1
+    for _ in 1 2 3 4 5 6 7 8; do
+        listening "$PORT" && return 0
+        sleep 0.25
+    done
+    return 1
+}
+
+REAL="${CLAUDE_REAL_BIN:-$(resolve_real || true)}"
+if [ -z "$REAL" ]; then
+    echo "subbox-claude: cannot find the real claude binary on PATH." >&2
+    echo "Set CLAUDE_REAL_BIN to its full path." >&2
+    exit 127
+fi
+
+# Both cases are set, and both are cleared: tools disagree about which they
+# read, and an inherited value from an outer shell would otherwise decide.
+NO_PROXY_LIST="localhost,127.0.0.1,::1,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12"
+
+if ensure_proxy; then
+    export HTTPS_PROXY="http://127.0.0.1:$PORT" \
+           HTTP_PROXY="http://127.0.0.1:$PORT" \
+           ALL_PROXY="socks5h://127.0.0.1:$PORT" \
+           NO_PROXY="$NO_PROXY_LIST" \
+           https_proxy="http://127.0.0.1:$PORT" \
+           http_proxy="http://127.0.0.1:$PORT" \
+           all_proxy="socks5h://127.0.0.1:$PORT" \
+           no_proxy="$NO_PROXY_LIST"
+else
+    # Without this, "running direct" would be a lie whenever the surrounding
+    # shell already exported a proxy — including a dead one.
+    unset HTTPS_PROXY HTTP_PROXY ALL_PROXY NO_PROXY \
+          https_proxy http_proxy all_proxy no_proxy
+    echo "subbox-claude: no local proxy on port $PORT — running direct." >&2
+fi
+
+exec "$REAL" "$@"
