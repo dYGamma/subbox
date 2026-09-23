@@ -14,6 +14,6 @@ pkgbase = subbox
 	depends = sing-box
 	depends = systemd
 	source = subbox-0.1.3.tar.gz::https://github.com/dYGamma/subbox/archive/refs/tags/v0.1.3.tar.gz
-	sha256sums = SKIP
+	sha256sums = 9ce025377a79ca506e6c572fa04c540a976716e3406db3aa15b14871283d748c
 
 pkgname = subbox
