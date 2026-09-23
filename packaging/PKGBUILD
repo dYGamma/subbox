@@ -1,0 +1,32 @@
+# Maintainer: Dmitry <samarindima4@gmail.com>
+pkgname=subbox
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Turn a proxy subscription into a running local sing-box proxy, with a TUI"
+arch=('any')
+url="https://github.com/dYGamma/subbox"
+license=('MIT')
+depends=('python' 'sing-box' 'systemd')
+makedepends=('python-build' 'python-installer' 'python-wheel' 'python-hatchling')
+checkdepends=('python-pytest')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  python -m build --wheel --no-isolation
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  # The suite is hermetic: every test relocates its state with SUBBOX_HOME,
+  # so it touches no unit, no port and no network.
+  PYTHONPATH="$PWD/src" python -m pytest -q
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  python -m installer --destdir="$pkgdir" dist/*.whl
+  # Unit and share paths stay defined in exactly one place.
+  make install-data DESTDIR="$pkgdir" PREFIX=/usr
+}
