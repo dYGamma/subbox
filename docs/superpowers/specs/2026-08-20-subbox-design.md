@@ -100,7 +100,7 @@ subbox/
 ├── integrations/claude-code/
 │   ├── README.md
 │   ├── claude                    PATH-shadowing wrapper
-│   └── proxy-ensure.sh           SessionStart hook
+│   └── subbox-proxy-ensure.sh    SessionStart hook
 ├── packaging/
 │   ├── PKGBUILD
 │   └── .SRCINFO
@@ -368,7 +368,7 @@ Optional, installed by `make install-claude`, documented separately in
   scanning `PATH` for the first `claude` that is not itself, compared by
   `readlink -f`, with a `CLAUDE_REAL_BIN` override. The current version
   hardcodes one user's home directory and cannot ship as is.
-- **`proxy-ensure.sh`** — a `SessionStart` hook that starts the proxy if the
+- **`subbox-proxy-ensure.sh`** — a `SessionStart` hook that starts the proxy if the
   port is dead and emits a `systemMessage` only when nothing usable is up.
   Calls `subbox status --quiet`.
 
@@ -389,7 +389,8 @@ exit IP is blocked. The core default stays neutral.
 |---|---|
 | `install` | Install package, entry points, units, and share data under `PREFIX`, honoring `DESTDIR`. |
 | `install-claude` | Additionally install the Claude Code wrapper and hook. |
-| `uninstall` | Remove everything `install` created; never touch user config or generated files. |
+| `uninstall` | Remove everything `install` created; never touch user config, generated files, or anything under `~/.claude`. |
+| `uninstall-claude` | Remove the Claude Code wrapper and hook. Separate from `uninstall` because those files live among files subbox did not put there. |
 | `check` | `pytest` |
 | `lint` | `ruff` + `shellcheck` |
 
