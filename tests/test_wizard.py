@@ -146,3 +146,34 @@ def test_aborting_at_the_first_question_changes_nothing(offline):
     script = Script([""])
     assert wizard.run(ask=script.ask, out=script.out) == 2
     assert not paths.config_file().exists()
+
+
+def test_a_busy_default_port_is_replaced_by_a_free_suggestion(offline, monkeypatch):
+    """Re-offering a port just refused means Enter cannot make progress."""
+    monkeypatch.setattr(wizard.probe, "port_listening",
+                        lambda port, **kw: port in (1080, 7777))
+    script = Script([URL, "", "", "", "1"])
+    assert wizard.run(ask=script.ask, out=script.out) == 0
+    cfg = config.load()
+    assert cfg["proxy"]["listen_port"] == 1081
+    assert cfg["pac"]["port"] == 7778
+    assert "Local proxy port [1081]" in script.text
+
+
+def test_end_of_input_ends_the_wizard_cleanly(offline):
+    """A piped stdin that runs out must not produce a traceback."""
+    def ask(prompt):
+        raise EOFError
+
+    lines = []
+    assert wizard.run(ask=ask, out=lines.append) == 2
+    assert any("did not finish" in line for line in lines)
+
+
+def test_interrupt_ends_the_wizard_cleanly(offline):
+    def ask(prompt):
+        raise KeyboardInterrupt
+
+    lines = []
+    assert wizard.run(ask=ask, out=lines.append) == 2
+    assert any("did not finish" in line for line in lines)

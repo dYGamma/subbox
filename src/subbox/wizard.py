@@ -42,6 +42,18 @@ def _yes(answer: str, default: bool = True) -> bool:
     return answer in ("y", "yes", "д", "да")
 
 
+def _free_port_from(start: int, limit: int = 50) -> int:
+    """First free port at or after `start`.
+
+    Offering a default that is already taken means pressing Enter cannot
+    make progress, which reads as the wizard being stuck.
+    """
+    for candidate in range(start, min(start + limit, 65536)):
+        if not probe.port_listening(candidate):
+            return candidate
+    return start
+
+
 def _ask_int(ask: Ask, out: Out, prompt: str, default: int) -> int:
     while True:
         raw = ask(f"{prompt} [{default}]: ").strip()
@@ -111,7 +123,8 @@ def _ask_pac(ask: Ask, out: Out, cfg: dict) -> None:
         ask("Serve a PAC file so a browser routes only chosen domains? [Y/n]: "))
     if not cfg["pac"]["enabled"]:
         return
-    cfg["pac"]["port"] = _ask_int(ask, out, "PAC server port", cfg["pac"]["port"])
+    cfg["pac"]["port"] = _ask_int(ask, out, "PAC server port",
+                                  _free_port_from(cfg["pac"]["port"]))
     out("Which domains should go through the proxy?")
     out("  1) AI assistants only (default)")
     out(f"  2) broader list ({len(RU_DOMAINS)} domains, includes social networks)")
@@ -145,6 +158,17 @@ def _start_services(out: Out, cfg: dict) -> None:
 
 
 def run(ask: Ask = input, out: Out = print, cfg: dict | None = None) -> int:
+    try:
+        return _run(ask, out, cfg)
+    except (EOFError, KeyboardInterrupt):
+        # Reached by Ctrl-D, Ctrl-C, or a piped stdin that ran out. A
+        # traceback here would be the first thing a new user ever saw.
+        out("")
+        out("Setup did not finish. Run `subbox setup` again to start over.")
+        return 2
+
+
+def _run(ask: Ask, out: Out, cfg: dict | None) -> int:
     cfg = cfg if cfg is not None else config.load()
     paths.ensure_dirs()
 
@@ -157,7 +181,7 @@ def run(ask: Ask = input, out: Out = print, cfg: dict | None = None) -> int:
         return 2
 
     cfg["proxy"]["listen_port"] = _ask_int(
-        ask, out, "Local proxy port", cfg["proxy"]["listen_port"])
+        ask, out, "Local proxy port", _free_port_from(cfg["proxy"]["listen_port"]))
     _ask_pac(ask, out, cfg)
 
     errors = config.validate(cfg)
