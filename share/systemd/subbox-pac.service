@@ -5,7 +5,8 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/env subbox serve-pac
+Environment=PATH=@BINDIR@:%h/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=@BINDIR@/subbox serve-pac
 Restart=on-failure
 RestartSec=3
 

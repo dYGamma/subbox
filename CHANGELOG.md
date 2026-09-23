@@ -5,6 +5,32 @@ versioning is [semantic](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-23
+
+The services could not start at all after a home-directory install.
+
+### Fixed
+
+- A systemd user unit does not inherit your shell's `PATH`, and the default
+  one excludes `~/.local/bin`. Both units called their binaries through `env`,
+  so a `subbox` or `sing-box` installed into a home prefix was invisible and
+  the services failed instantly. The units now carry a `PATH` containing the
+  install prefix, substituted at install time.
+- The wizard reported `started subbox.service` for a service that was already
+  dead. `Type=simple` makes `systemctl restart` succeed as soon as the process
+  is forked, before a failed `exec` surfaces, so the wizard contradicted its
+  own diagnostics seconds later. It now waits for the unit to settle and says
+  plainly when it did not, with the command that explains why.
+- `make uninstall` deleted unit files without stopping the services, leaving
+  them running with nothing left to manage them. It now disables and stops
+  them first.
+- The domain-set question did not say what choosing a list would do. It now
+  states that only those domains are proxied and how to change the list later.
+
+### Added
+
+- Removal is documented in both READMEs.
+
 ## [0.1.2] - 2026-09-23
 
 Wizard usability and credential handling, from watching a first real run.

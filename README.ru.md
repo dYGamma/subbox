@@ -178,6 +178,26 @@ subbox doctor
 
 Подробнее по каждому отказу — в `docs/troubleshooting.md`.
 
+## Как удалить
+
+```bash
+cd subbox && make uninstall
+```
+
+Останавливает и отключает сервисы, удаляет всё, что положила установка. Ваш
+конфиг и сгенерированные файлы не трогаются — сносите сами, если нужно:
+
+```bash
+rm -rf ~/.config/subbox ~/.local/share/subbox ~/.cache/subbox
+```
+
+Необязательный модуль Claude Code удаляется отдельно, потому что живёт среди
+файлов, которые subbox туда не клал:
+
+```bash
+make uninstall-claude
+```
+
 ## Документация
 
 - [`docs/setup.md`](docs/setup.md) — по шагам, от панели до работающего прокси

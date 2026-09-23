@@ -6,6 +6,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+# A user unit does not inherit the shell's PATH, and ~/.local/bin is not in
+# the default one. Without this, a sing-box installed there is invisible and
+# the unit fails instantly. @BINDIR@ is substituted at install time.
+Environment=PATH=@BINDIR@:%h/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStartPre=/usr/bin/env mkdir -p %h/.cache/subbox
 ExecStart=/usr/bin/env sing-box run -c %h/.config/subbox/sing-box.json
 Restart=on-failure

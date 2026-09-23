@@ -213,3 +213,29 @@ def test_the_secret_reader_falls_back_when_there_is_no_terminal(monkeypatch):
     monkeypatch.setattr(wizard.sys.stdin, "isatty", lambda: False)
     read = wizard._secret_reader(lambda prompt: "typed")
     assert read("Subscription URL: ") == "typed"
+
+
+def test_a_service_that_does_not_stay_up_is_reported_as_such(offline, monkeypatch):
+    """Type=simple returns 0 the moment it forks, before exec can fail."""
+    monkeypatch.setattr(wizard.units, "restart", lambda unit: (0, ""))
+    monkeypatch.setattr(wizard.units, "is_active", lambda unit: False)
+    script = Script([URL, "", "", "", "1"])
+    wizard.run(ask=script.ask, out=script.out)
+    assert "did not stay running" in script.text
+    assert "systemctl --user status" in script.text
+    assert "started subbox.service" not in script.text
+
+
+def test_a_service_that_comes_up_is_reported_as_started(offline, monkeypatch):
+    monkeypatch.setattr(wizard.units, "is_active", lambda unit: True)
+    script = Script([URL, "", "", "", "1"])
+    wizard.run(ask=script.ask, out=script.out)
+    assert "started subbox.service" in script.text
+    assert "did not stay running" not in script.text
+
+
+def test_the_domain_question_explains_the_consequence(offline):
+    script = Script([URL, "", "", "", "1"])
+    wizard.run(ask=script.ask, out=script.out)
+    assert "everything else goes direct" in script.text
+    assert "subbox pac" in script.text

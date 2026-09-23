@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import getpass
 import sys
+import time
 from collections.abc import Callable
 from urllib.parse import urlparse
 
@@ -155,6 +156,10 @@ def _ask_pac(ask: Ask, out: Out, cfg: dict) -> None:
     out("The browser fetches the PAC file from this port on localhost.")
     cfg["pac"]["port"] = _ask_int(ask, out, "PAC server port",
                                   _free_port_from(cfg["pac"]["port"]))
+    out("")
+    out("Only these domains go through the proxy; everything else goes direct.")
+    out("The list is easy to change later: edit pac.domains in config.toml and")
+    out("run `subbox pac`.")
     out("Which domains should go through the proxy?")
     out("  1) AI assistants only (default)")
     out(f"  2) broader list ({len(RU_DOMAINS)} domains, includes social networks)")
@@ -167,6 +172,15 @@ def _ask_pac(ask: Ask, out: Out, cfg: dict) -> None:
         cfg["pac"]["domains"] = [d.strip() for d in raw.split(",") if d.strip()]
     else:
         cfg["pac"]["domains"] = list(DEFAULT_DOMAINS)
+
+
+def _settles_active(unit: str, seconds: float = 3.0) -> bool:
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if units.is_active(unit):
+            return True
+        time.sleep(0.25)
+    return units.is_active(unit)
 
 
 def _start_services(out: Out, cfg: dict) -> None:
@@ -183,8 +197,17 @@ def _start_services(out: Out, cfg: dict) -> None:
             continue
         units.enable(unit)
         code, message = units.restart(unit)
-        out(f"started {unit}" if code == 0
-            else f"could not start {unit}: {message.strip()}")
+        if code != 0:
+            out(f"could not start {unit}: {message.strip()}")
+            continue
+        # Type=simple reports success as soon as the process is forked, so a
+        # binary that cannot be executed still looks like a clean start. Only
+        # the unit's own state a moment later tells the truth.
+        if _settles_active(unit):
+            out(f"started {unit}")
+        else:
+            out(f"{unit} started but did not stay running.")
+            out(f"  see why: systemctl --user status {unit}")
 
 
 def run(ask: Ask = input, out: Out = print, cfg: dict | None = None,

@@ -178,6 +178,27 @@ recognising the symptom is the hard part:
 
 `docs/troubleshooting.md` covers each failure in more detail.
 
+## Removing it
+
+```bash
+cd subbox && make uninstall
+```
+
+That stops and disables the services and removes everything the install put
+in place. Your configuration and generated files are left alone; delete them
+yourself if you want them gone:
+
+```bash
+rm -rf ~/.config/subbox ~/.local/share/subbox ~/.cache/subbox
+```
+
+The optional Claude Code integration is separate, because it lives among files
+subbox did not put there:
+
+```bash
+make uninstall-claude
+```
+
 ## Documentation
 
 - [`docs/setup.md`](docs/setup.md) — step by step, from your panel to a working proxy

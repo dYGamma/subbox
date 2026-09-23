@@ -50,8 +50,14 @@ install-python:
 	chmod 755 "$(DESTDIR)$(PREFIX)/bin/subbox"
 
 install-data:
-	install -Dm644 share/systemd/subbox.service "$(DESTDIR)$(UNITDIR)/subbox.service"
-	install -Dm644 share/systemd/subbox-pac.service "$(DESTDIR)$(UNITDIR)/subbox-pac.service"
+	install -d "$(DESTDIR)$(UNITDIR)"
+	@# The units must name a directory that actually holds the binaries: a
+	@# systemd user unit gets a fixed PATH that excludes ~/.local/bin.
+	sed 's|@BINDIR@|$(PREFIX)/bin|g' share/systemd/subbox.service \
+		> "$(DESTDIR)$(UNITDIR)/subbox.service"
+	sed 's|@BINDIR@|$(PREFIX)/bin|g' share/systemd/subbox-pac.service \
+		> "$(DESTDIR)$(UNITDIR)/subbox-pac.service"
+	chmod 644 "$(DESTDIR)$(UNITDIR)/subbox.service" "$(DESTDIR)$(UNITDIR)/subbox-pac.service"
 	install -Dm644 share/pac/default-domains.toml "$(DESTDIR)$(SHAREDIR)/default-domains.toml"
 	install -Dm644 examples/config.toml "$(DESTDIR)$(SHAREDIR)/config.toml.example"
 	install -Dm644 examples/domains-ru.toml "$(DESTDIR)$(SHAREDIR)/domains-ru.toml"
@@ -86,6 +92,12 @@ install-claude:
 # PREFIX guard is here because the next line is an rm -rf.
 uninstall:
 	@test -n "$(PREFIX)" || { echo "PREFIX is empty; refusing to remove anything"; exit 1; }
+	@# Stop first: deleting a unit file leaves the service running with no way
+	@# to manage it.
+	@if command -v systemctl >/dev/null 2>&1 && [ -z "$(DESTDIR)" ]; then \
+		systemctl --user disable --now subbox.service subbox-pac.service \
+			>/dev/null 2>&1 || true; \
+	fi
 	rm -f "$(PREFIX)/bin/subbox"
 	rm -rf "$(LIBDIR)"
 	@# releases before 0.1.1 installed through pip; sweep that layout too
@@ -95,6 +107,9 @@ uninstall:
 	done
 	rm -f "$(UNITDIR)/subbox.service" "$(UNITDIR)/subbox-pac.service"
 	rm -rf "$(SHAREDIR)" "$(PREFIX)/share/doc/subbox" "$(PREFIX)/share/licenses/subbox"
+	@if command -v systemctl >/dev/null 2>&1 && [ -z "$(DESTDIR)" ]; then \
+		systemctl --user daemon-reload >/dev/null 2>&1 || true; \
+	fi
 	@echo "A development install made with 'make dev' is removed by: pip uninstall subbox"
 	@echo "Configuration and generated files were left alone."
 	@echo "The Claude Code integration, if installed, is removed by: make uninstall-claude"

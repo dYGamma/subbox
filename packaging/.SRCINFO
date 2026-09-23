@@ -1,6 +1,6 @@
 pkgbase = subbox
 	pkgdesc = Turn a proxy subscription into a running local sing-box proxy, with a TUI
-	pkgver = 0.1.2
+	pkgver = 0.1.3
 	pkgrel = 1
 	url = https://github.com/dYGamma/subbox
 	arch = any
@@ -13,7 +13,7 @@ pkgbase = subbox
 	depends = python
 	depends = sing-box
 	depends = systemd
-	source = subbox-0.1.2.tar.gz::https://github.com/dYGamma/subbox/archive/refs/tags/v0.1.2.tar.gz
+	source = subbox-0.1.3.tar.gz::https://github.com/dYGamma/subbox/archive/refs/tags/v0.1.3.tar.gz
 	sha256sums = SKIP
 
 pkgname = subbox
