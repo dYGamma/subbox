@@ -5,6 +5,32 @@ versioning is [semantic](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-23
+
+Installation fixes, all found by a first install on Debian.
+
+### Fixed
+
+- The installer told Debian and Ubuntu users to run `sudo apt install
+  sing-box`. No such package exists there; only Arch, Alpine and nixpkgs carry
+  it. Each package manager now gets advice that is true for it.
+- The installer told them to run `sudo apt install python`. The package is
+  `python3`; package names are now mapped per distribution.
+- `make install` required `pip`, which Debian and Ubuntu ship separately as
+  `python3-pip` and which PEP 668 restricts. Installation no longer uses pip,
+  wheels or a build backend at all: subbox is pure standard library, so
+  installing it copies files and writes a launcher that knows where they went.
+  This also removes the `--prefix` import-path trap, so any prefix now works.
+- The launcher checks the interpreter version first, so an old Python produces
+  a sentence instead of a `ModuleNotFoundError` for `tomllib`.
+
+### Added
+
+- `./install.sh --fetch-sing-box` downloads the official static `sing-box`
+  release for the detected architecture into the prefix, without root. This
+  makes a working install possible on distributions that do not package it.
+- `./install.sh --help`.
+
 ## [0.1.0] - 2026-09-23
 
 First release.

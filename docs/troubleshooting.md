@@ -78,16 +78,32 @@ export PATH="$HOME/.local/bin:$PATH"
 Put it in the profile your terminal actually reads. If your terminal starts
 fish or zsh, `~/.bashrc` is not that file.
 
-## The launcher starts and says it cannot import subbox
+## `apt` or `dnf` says there is no sing-box package
 
-You installed with a custom `PREFIX`.
+**Cause.** Debian, Ubuntu, Fedora and openSUSE do not carry `sing-box` in their
+own repositories. Only Arch, Alpine and nixpkgs do.
 
-**Cause.** That prefix is not on the Python interpreter's import path, so the
-console script cannot find its own package. `make install` detects this and
-refuses rather than leaving you a broken command.
+**Fix.** Either add the upstream repository from
+[the official installation page](https://sing-box.sagernet.org/installation/),
+or let the installer fetch the official static binary into your prefix without
+root:
 
-**Fix.** Install with the default `PREFIX=$HOME/.local`, or export
-`PYTHONPATH=<prefix>/lib/pythonX.Y/site-packages`.
+```bash
+./install.sh --fetch-sing-box
+```
+
+## `subbox` says it needs Python 3.11 or newer
+
+**Cause.** The launcher checks the interpreter version before importing
+anything, because the first thing subbox needs is `tomllib`, which arrived in
+3.11. Ubuntu 22.04 ships 3.10.
+
+**Fix.** Install a newer Python and reinstall so the launcher points at it:
+
+```bash
+make uninstall
+PYTHON=python3.12 make install
+```
 
 ## A development instance under `SUBBOX_HOME` is ignored by systemd
 

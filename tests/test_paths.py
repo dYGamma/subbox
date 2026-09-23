@@ -48,3 +48,15 @@ def test_ensure_dirs_creates_with_private_mode(isolated_home):
     for d in (paths.config_dir(), paths.data_dir(), paths.cache_dir()):
         assert d.is_dir()
         assert oct(d.stat().st_mode & 0o777) == "0o700"
+
+
+def test_tilde_abbreviates_the_home_directory(monkeypatch, tmp_path):
+    """The dashboard header is one line wide; an absolute path overflows it."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert paths.tilde(tmp_path / ".config" / "subbox" / "config.toml") == (
+        "~/.config/subbox/config.toml")
+
+
+def test_tilde_leaves_paths_outside_home_alone(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    assert paths.tilde(Path("/etc/subbox.toml")) == "/etc/subbox.toml"

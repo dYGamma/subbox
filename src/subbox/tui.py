@@ -355,7 +355,7 @@ class App:
         self.stdscr.erase()
         height, width = self.stdscr.getmaxyx()
 
-        header = f" subbox — {paths.config_file()} "
+        header = f" subbox — {paths.tilde(paths.config_file())} "
         if self.busy:
             header += f" [{self.busy}…] "
         _put(self.stdscr, 0, 0, header.ljust(max(0, width - 1)), curses.A_REVERSE)

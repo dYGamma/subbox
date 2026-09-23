@@ -65,6 +65,19 @@ def user_unit_dir() -> Path:
     return (Path(base) if base else _home() / ".config") / "systemd" / "user"
 
 
+def tilde(path: Path) -> str:
+    """Render a path with the home directory abbreviated, as a shell prompt does.
+
+    The dashboard header is one line wide; an absolute path pushes the rest
+    of it off the screen.
+    """
+    home = _home()
+    try:
+        return str(Path("~") / path.relative_to(home))
+    except ValueError:
+        return str(path)
+
+
 def ensure_dirs() -> None:
     for d in (config_dir(), data_dir(), cache_dir()):
         d.mkdir(parents=True, exist_ok=True, mode=0o700)

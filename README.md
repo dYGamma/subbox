@@ -23,7 +23,10 @@ the domains you choose through the proxy and everything else goes direct.
 
 - Linux with systemd
 - Python 3.11 or newer
-- The `sing-box` binary
+- The `sing-box` binary — the installer can fetch it for you
+
+Nothing else. No `pip`, no build tooling, no Python packages: subbox is pure
+standard library, and installing it copies files and writes a launcher.
 
 ## Install
 
@@ -45,6 +48,15 @@ cd subbox
 The installer checks the requirements, prints the exact package command for
 your distribution if something is missing, and then runs the wizard. It never
 calls `sudo` on your behalf.
+
+Debian, Ubuntu, Fedora and openSUSE do not package `sing-box`. Either follow
+the [official installation page](https://sing-box.sagernet.org/installation/),
+or let the installer put the official static binary in your prefix, without
+root:
+
+```bash
+./install.sh --fetch-sing-box
+```
 
 ## First run
 

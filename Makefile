@@ -12,6 +12,7 @@ else
 UNITDIR ?= $(or $(XDG_CONFIG_HOME),$(HOME)/.config)/systemd/user
 endif
 
+LIBDIR     ?= $(PREFIX)/lib/subbox
 SHAREDIR   ?= $(PREFIX)/share/subbox
 CLAUDE_BIN ?= $(HOME)/.local/share/subbox-claude/bin
 HOOK_DIR   ?= $(HOME)/.claude/hooks
@@ -25,8 +26,27 @@ install: install-python install-data smoke
 	@echo
 	@echo "Installed. Next: subbox setup"
 
+# No pip, no wheel, no build backend. subbox is pure Python with no
+# dependencies, so installing it is copying files and writing a launcher that
+# knows where they went. That sidesteps PEP 668, distributions that ship pip
+# as a separate package, and the --prefix import-path trap in one move.
 install-python:
-	$(PYTHON) -m pip install --prefix="$(PREFIX)" --root="$(DESTDIR)/" --upgrade .
+	install -d "$(DESTDIR)$(LIBDIR)/subbox"
+	install -m644 src/subbox/*.py "$(DESTDIR)$(LIBDIR)/subbox/"
+	install -d "$(DESTDIR)$(PREFIX)/bin"
+	@py="$$(command -v $(PYTHON))"; \
+	test -n "$$py" || { echo "$(PYTHON) not found"; exit 1; }; \
+	{ \
+	  echo "#!$$py"; \
+	  echo "import sys"; \
+	  echo "if sys.version_info < (3, 11):"; \
+	  echo "    sys.exit('subbox needs Python 3.11 or newer; this is %d.%d'"; \
+	  echo "             % sys.version_info[:2])"; \
+	  echo 'sys.path.insert(0, "$(LIBDIR)")'; \
+	  echo "from subbox.cli import main"; \
+	  echo "sys.exit(main())"; \
+	} > "$(DESTDIR)$(PREFIX)/bin/subbox"
+	chmod 755 "$(DESTDIR)$(PREFIX)/bin/subbox"
 
 install-data:
 	install -Dm644 share/systemd/subbox.service "$(DESTDIR)$(UNITDIR)/subbox.service"
@@ -66,6 +86,8 @@ install-claude:
 uninstall:
 	@test -n "$(PREFIX)" || { echo "PREFIX is empty; refusing to remove anything"; exit 1; }
 	rm -f "$(PREFIX)/bin/subbox"
+	rm -rf "$(LIBDIR)"
+	@# releases before 0.1.1 installed through pip; sweep that layout too
 	@for d in "$(PREFIX)"/lib/python*/site-packages/subbox \
 	          "$(PREFIX)"/lib/python*/site-packages/subbox-*.dist-info; do \
 		if [ -e "$$d" ]; then rm -rf "$$d" && echo "removed $$d"; fi; \
