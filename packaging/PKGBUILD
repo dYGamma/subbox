@@ -10,7 +10,7 @@ depends=('python' 'sing-box' 'systemd')
 makedepends=('python-build' 'python-installer' 'python-wheel' 'python-hatchling')
 checkdepends=('python-pytest')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('e0d6cee91696c0f95d70ec98410afaa0dc45f658f903677249e4ee34141be449')
 
 build() {
   cd "$pkgname-$pkgver"
